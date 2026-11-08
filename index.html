@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hanzi">
+<meta name="theme-color" content="#0f1115">
+<meta name="color-scheme" content="dark">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<title>Hanzi</title>
+<style>:root {
+  --bg: #0f1115;
+  --surface: #1a1d24;
+  --surface2: #252a34;
+  --line: #2c313c;
+  --text: #f2f2f5;
+  --muted: #9aa0ad;
+  --accent: #e0483c;
+  --good: #34c759;
+  --bad: #ff453a;
+  --paper: #f6f1e7;
+  --ink: #1c1b1f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+#app {
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  padding-top: env(safe-area-inset-top);
+}
+#banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: #3a2a14;
+  color: #ffd9a0;
+  font-size: 14px;
+}
+#banner[hidden] { display: none; }
+#banner span { flex: 1; }
+main#view {
+  flex: 1;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px 16px;
+}
+nav#tabs {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+nav#tabs button {
+  flex: 1;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  padding: 9px 0 7px;
+  font: inherit;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+nav#tabs .icon { font-size: 20px; line-height: 1.1; filter: grayscale(1); }
+nav#tabs button[aria-current="page"] { color: var(--accent); }
+nav#tabs button[aria-current="page"] .icon { filter: none; }
+
+h2 { font-size: 20px; margin: 18px 0 8px; }
+h2:first-child { margin-top: 4px; }
+.muted { color: var(--muted); font-size: 14px; margin: 6px 0; }
+.center { text-align: center; }
+
+/* buttons */
+.btn {
+  appearance: none;
+  border: 0;
+  border-radius: 14px;
+  padding: 14px 18px;
+  background: var(--surface2);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.danger { background: #3a1f1f; color: #ff6b61; }
+.btn.small { padding: 7px 12px; font-size: 14px; border-radius: 10px; }
+.btn.wide { display: block; width: 100%; margin: 10px 0; }
+.btn:disabled { opacity: 0.35; }
+.btn:active:not(:disabled) { filter: brightness(1.15); }
+
+/* forms */
+.form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field > span { font-size: 13px; color: var(--muted); }
+input[type="text"], input[type="search"], input[type="number"] {
+  width: 100%;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 13px 14px;
+  font: inherit;
+  font-size: 18px; /* >= 16px so iOS does not zoom on focus */
+}
+input.zh { font-size: 26px; }
+input:focus { outline: 2px solid var(--accent); outline-offset: 0; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+/* study */
+.study { display: flex; flex-direction: column; height: 100%; gap: 10px; overflow: hidden; }
+.stats { display: flex; justify-content: center; gap: 8px; }
+.chip { padding: 4px 10px; border-radius: 999px; background: var(--surface); font-size: 13px; color: var(--muted); }
+.chip b { font-variant-numeric: tabular-nums; }
+.chip.new b { color: #5ac8fa; }
+.chip.lrn b { color: #ff9f0a; }
+.chip.rev b { color: var(--good); }
+.chip.active { outline: 1.5px solid currentColor; color: var(--text); }
+.stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; perspective: 1200px; }
+.swipe {
+  position: relative;
+  width: min(100%, 420px);
+  height: min(100%, 520px);
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  will-change: transform;
+}
+.flip {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.flip.is-flipped { transform: rotateY(180deg); }
+.face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  border-radius: 24px;
+  background: var(--paper);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 28px;
+  text-align: center;
+  box-shadow: 0 0 0 5px var(--glow, transparent), 0 14px 40px rgba(0, 0, 0, 0.5);
+}
+.face.back { transform: rotateY(180deg); }
+.face .tag { position: absolute; top: 16px; left: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #8b8577; }
+.face .text { font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.face .hanzi { font-family: "PingFang SC", "Hiragino Sans GB", "Heiti SC", "Noto Sans CJK SC", sans-serif; font-weight: 500; line-height: 1.15; overflow-wrap: anywhere; }
+.face .pinyin { font-size: 26px; color: #6b665a; }
+.stamp { position: absolute; top: 46px; font-size: 44px; font-weight: 800; opacity: 0; pointer-events: none; z-index: 5; }
+.stamp.good { left: 24px; color: var(--good); }
+.stamp.bad { right: 24px; color: var(--bad); }
+.hint { text-align: center; color: var(--muted); font-size: 14px; min-height: 20px; }
+.actions { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; }
+.btn.bad { background: #3a1f1f; color: #ff6b61; }
+.btn.good { background: #1d3a26; color: #5be07d; }
+.btn.undo { padding-left: 20px; padding-right: 20px; font-size: 20px; }
+.empty { text-align: center; padding: 20px; }
+.empty .big { font-size: 72px; line-height: 1.1; margin-bottom: 10px; color: var(--accent); }
+.empty .big.ok { color: var(--good); }
+
+/* cards list */
+.cards-view { display: flex; flex-direction: column; gap: 8px; }
+.list { display: flex; flex-direction: column; gap: 8px; }
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas: "pl meta" "zh meta";
+  gap: 2px 10px;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+}
+.row .pl { grid-area: pl; font-weight: 600; }
+.row .zh-line { grid-area: zh; font-size: 18px; color: #d8d8de; }
+.row .py { font-size: 14px; color: var(--muted); }
+.row .meta { grid-area: meta; align-self: center; font-size: 12px; color: var(--muted); white-space: nowrap; }
+dialog {
+  background: var(--surface);
+  color: var(--text);
+  border: 0;
+  border-radius: 22px;
+  width: min(92vw, 440px);
+  padding: 18px;
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.65); }
+.dialog-actions { display: grid; grid-template-columns: auto 1fr 1fr; gap: 8px; }
+
+/* toast */
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 16px);
+  max-width: min(90vw, 440px);
+  background: #e9e9ee;
+  color: #111;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 15px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  z-index: 50;
+}
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="banner" hidden></div>
+  <main id="view"></main>
+  <nav id="tabs"></nav>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
